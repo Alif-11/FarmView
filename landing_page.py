@@ -57,4 +57,31 @@ m = folium.Map(location=center, zoom_start=13)
 Draw(export=False, draw_options={"polyline": False, "circle": False, "marker": False, "rectangle": False}).add_to(m)
 
 # Display map and return last drawn polygon
-st_data = st_folium(m, height=600, width=700, returned_objects=["last_drawn"])
+map_data = st_folium(m, height=600, width=700)
+print("huh?")
+
+
+if st.button("Calculate Area"):
+    print(f"st_data:{map_data['all_drawings']}")
+    print("???")
+    if map_data and map_data['all_drawings']:
+        print("bwuh")
+        area_acres = 0
+        for polygon in map_data['all_drawings']:
+            geojson = polygon["geometry"]
+            coords = geojson["coordinates"][0]  # Outer ring of polygon
+
+            # GeoDataFrame from polygon
+            gdf = gpd.GeoDataFrame(index=[0], geometry=[Polygon(coords)], crs="EPSG:4326")
+
+            # Project to metric CRS for accurate area (Web Mercator or UTM)
+            gdf_proj = gdf.to_crs(epsg=3857)  # Web Mercator meters
+
+            # Calculate area in square meters, then convert to acres
+            area_m2 = gdf_proj.geometry[0].area
+            area_acres += area_m2 * 0.000247105
+
+        st.info(f"Area of drawn polygons: **{area_acres:.2f} acres**")
+        st.success(f"Total CO2 Saved: **{area_acres*0.077:.2f} tons**")
+    else:
+        st.warning("Please draw a polygon on the map.")
